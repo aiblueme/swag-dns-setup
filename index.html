@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SWAG DNS Setup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f0f;
+      --card-bg:   #141414;
+      --card-border: #222222;
+      --muted:     #555555;
+      --muted-2:   #3a3a3a;
+      --text:      #e0e0e0;
+      --text-dim:  #888888;
+      --amber:     #f59e0b;
+      --amber-dim: #7a4f06;
+      --amber-glow:#f59e0b22;
+      --code-bg:   #1a1a1a;
+      --radius:    10px;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 32px 16px 64px;
+    }
+
+    .wrapper {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 16px;
+    }
+
+    .header-left h1 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .header-left p {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .reset-link {
+      font-size: 11px;
+      color: var(--muted);
+      cursor: pointer;
+      background: none;
+      border: none;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      white-space: nowrap;
+      padding: 0;
+      font-family: var(--font-body);
+      margin-top: 4px;
+    }
+    .reset-link:hover { color: var(--text-dim); }
+
+    /* ── Progress Bar ── */
+    .progress-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .progress-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      min-width: 90px;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 4px;
+      background: var(--muted-2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--amber);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.35s ease;
+    }
+
+    /* ── Domain Input Row ── */
+    .domain-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+      padding: 12px 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--muted-2);
+      flex-shrink: 0;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+    .live-dot.active {
+      background: var(--amber);
+      box-shadow: 0 0 6px var(--amber);
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .input-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .domain-input {
+      background: var(--code-bg);
+      border: 1px solid var(--muted-2);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 5px 10px;
+      outline: none;
+      transition: border-color 0.2s ease;
+      width: 200px;
+    }
+    #vpsInput { width: 130px; }
+
+    .domain-input::placeholder { color: var(--muted); }
+    .domain-input:focus { border-color: var(--amber); }
+
+    .clear-link {
+      font-size: 10px;
+      color: var(--muted);
+      cursor: pointer;
+      background: none;
+      border: none;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      font-family: var(--font-body);
+      padding: 0;
+    }
+    .clear-link:hover { color: var(--text-dim); }
+
+    .domain-row-divider {
+      width: 1px;
+      height: 20px;
+      background: var(--muted-2);
+    }
+
+    /* ── Bento Grid ── */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto;
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: inset 0 1px 0 #ffffff08;
+      border-left: 3px solid transparent;
+      transition: border-left-color 0.3s ease, opacity 0.3s ease;
+      position: relative;
+    }
+
+    .card.done {
+      border-left-color: var(--amber);
+      opacity: 0.7;
+    }
+    .card.done:hover { opacity: 0.9; }
+
+    /* Layout: Card 1 & 2 side by side (default 2-col), Card 3 full width, Card 4 & 5 side by side */
+    .card-1 { grid-column: 1; }
+    .card-2 { grid-column: 2; }
+    .card-3 { grid-column: 1 / -1; }
+    .card-4 { grid-column: 1; }
+    .card-5 { grid-column: 2; }
+
+    /* Card header */
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .card-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--amber);
+      background: var(--amber-glow);
+      border: 1px solid var(--amber-dim);
+      border-radius: 4px;
+      padding: 2px 7px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .card-title-group {}
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.3;
+    }
+    .card-desc {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 3px;
+    }
+
+    /* Checklist */
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      cursor: pointer;
+    }
+
+    /* Custom checkbox */
+    .check-wrap {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .check-wrap input[type="checkbox"] {
+      display: none;
+    }
+
+    .check-box {
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid var(--muted-2);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.2s ease, background 0.2s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .check-box::after {
+      content: '';
+      position: absolute;
+      width: 5px;
+      height: 9px;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      transform: rotate(45deg) scale(0) translate(-1px, -1px);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      margin-top: -2px;
+    }
+
+    .check-wrap input[type="checkbox"]:checked + .check-box {
+      background: var(--amber);
+      border-color: var(--amber);
+    }
+    .check-wrap input[type="checkbox"]:checked + .check-box::after {
+      transform: rotate(45deg) scale(1) translate(-1px, -1px);
+    }
+
+    .check-label {
+      font-size: 12.5px;
+      color: var(--text);
+      line-height: 1.5;
+      user-select: none;
+      transition: color 0.2s ease;
+    }
+
+    .checklist-item:has(input:checked) .check-label {
+      color: var(--text-dim);
+      text-decoration: line-through;
+      text-decoration-color: var(--muted-2);
+    }
+
+    /* Code block */
+    .code-wrap {
+      margin-top: 14px;
+      position: relative;
+    }
+
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--muted-2);
+      border-radius: 8px;
+      padding: 14px 16px;
+      overflow-x: auto;
+    }
+
+    .code-block code {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      line-height: 1.7;
+      color: #d4a847;
+      white-space: pre;
+      display: block;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--muted-2);
+      border: 1px solid #333;
+      border-radius: 5px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 3px 8px;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .copy-btn:hover { background: #333; color: var(--text); }
+    .copy-btn.copied { background: var(--amber-glow); color: var(--amber); border-color: var(--amber-dim); }
+
+    /* Card 3 two-column layout inside */
+    .card-3-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 700px) {
+      .card-3-inner { grid-template-columns: 1fr; }
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      body { padding: 20px 12px 48px; }
+      .bento-grid {
+        grid-template-columns: 1fr;
+      }
+      .card-1, .card-2, .card-3, .card-4, .card-5 {
+        grid-column: 1;
+      }
+      .domain-row { flex-wrap: wrap; gap: 8px; }
+      .domain-input { width: 160px; }
+      #vpsInput { width: 120px; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--muted-2); border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>SWAG DNS Setup</h1>
+      <p>Cloudflare → Wildcard SSL → Docker</p>
+    </div>
+    <button class="reset-link" id="resetBtn">Reset Progress</button>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="progress-row">
+    <span class="progress-label" id="progressLabel">0 of 20 steps</span>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- Domain + VPS Input Row -->
+  <div class="domain-row">
+    <div class="live-dot" id="liveDot"></div>
+
+    <div class="input-group">
+      <span class="input-label">Your Domain:</span>
+      <input class="domain-input" id="domainInput" type="text" placeholder="yourdomain.com" autocomplete="off" spellcheck="false" />
+      <button class="clear-link" id="clearDomain">clear</button>
+    </div>
+
+    <div class="domain-row-divider"></div>
+
+    <div class="input-group">
+      <span class="input-label">VPS IP:</span>
+      <input class="domain-input" id="vpsInput" type="text" placeholder="0.0.0.0" autocomplete="off" spellcheck="false" />
+      <button class="clear-link" id="clearVps">clear</button>
+    </div>
+  </div>
+
+  <!-- Bento Grid -->
+  <div class="bento-grid">
+
+    <!-- Card 1 -->
+    <div class="card card-1" data-card="1">
+      <div class="card-header">
+        <span class="card-badge">01</span>
+        <div class="card-title-group">
+          <div class="card-title">Domain Delegation</div>
+          <div class="card-desc">Transfer DNS authority from Namecheap to Cloudflare</div>
+        </div>
+      </div>
+      <ul class="checklist" id="checklist-1">
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="1" data-idx="0" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Log into Namecheap, select your domain">Log into Namecheap, select your domain</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="1" data-idx="1" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Set Nameservers to &quot;Custom DNS&quot;">Set Nameservers to "Custom DNS"</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="1" data-idx="2" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Add Cloudflare Nameservers (found in Cloudflare Dashboard → your domain → Overview)">Add Cloudflare Nameservers (found in Cloudflare Dashboard → your domain → Overview)</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="1" data-idx="3" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Wait for &quot;Active&quot; status in Cloudflare (can take up to 24h)">Wait for "Active" status in Cloudflare (can take up to 24h)</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="card card-2" data-card="2">
+      <div class="card-header">
+        <span class="card-badge">02</span>
+        <div class="card-title-group">
+          <div class="card-title">DNS Records &amp; API Token</div>
+          <div class="card-desc">Configure wildcard DNS entry and generate SWAG API token</div>
+        </div>
+      </div>
+      <ul class="checklist" id="checklist-2">
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="2" data-idx="0" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Create A record: @ → YOUR_VPS_IP (Proxy: OFF / grey cloud)">Create A record: @ → YOUR_VPS_IP (Proxy: OFF / grey cloud)</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="2" data-idx="1" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Create CNAME record: * → yourdomain.com (Proxy: OFF / grey cloud)">Create CNAME record: * → yourdomain.com (Proxy: OFF / grey cloud)</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="2" data-idx="2" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Go to Cloudflare → My Profile → API Tokens → Create Token">Go to Cloudflare → My Profile → API Tokens → Create Token</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="2" data-idx="3" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Use &quot;Edit zone DNS&quot; template">Use "Edit zone DNS" template</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="2" data-idx="4" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Set permissions: Zone.DNS:Edit + Zone.Zone:Read">Set permissions: Zone.DNS:Edit + Zone.Zone:Read</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="2" data-idx="5" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Set scope: Include → yourdomain.com">Set scope: Include → yourdomain.com</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="2" data-idx="6" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Save token securely (shown only once)">Save token securely (shown only once)</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Card 3 (full width) -->
+    <div class="card card-3" data-card="3">
+      <div class="card-header">
+        <span class="card-badge">03</span>
+        <div class="card-title-group">
+          <div class="card-title">Deploy SWAG Container</div>
+          <div class="card-desc">Set up the SWAG Docker container on your VPS</div>
+        </div>
+      </div>
+      <div class="card-3-inner">
+        <ul class="checklist" id="checklist-3">
+          <li class="checklist-item">
+            <label class="check-wrap">
+              <input type="checkbox" data-card="3" data-idx="0" />
+              <div class="check-box"></div>
+            </label>
+            <span class="check-label" data-template="SSH into YOUR_VPS_IP">SSH into YOUR_VPS_IP</span>
+          </li>
+          <li class="checklist-item">
+            <label class="check-wrap">
+              <input type="checkbox" data-card="3" data-idx="1" />
+              <div class="check-box"></div>
+            </label>
+            <span class="check-label" data-template="Run: mkdir -p ~/docker/swag &amp;&amp; cd ~/docker/swag">Run: mkdir -p ~/docker/swag &amp;&amp; cd ~/docker/swag</span>
+          </li>
+          <li class="checklist-item">
+            <label class="check-wrap">
+              <input type="checkbox" data-card="3" data-idx="2" />
+              <div class="check-box"></div>
+            </label>
+            <span class="check-label" data-template="Create docker-compose.yml using the code block — edit domain and email to match yours">Create docker-compose.yml using the code block — edit domain and email to match yours</span>
+          </li>
+          <li class="checklist-item">
+            <label class="check-wrap">
+              <input type="checkbox" data-card="3" data-idx="3" />
+              <div class="check-box"></div>
+            </label>
+            <span class="check-label" data-template="Run: docker compose up -d (initializes config folder structure)">Run: docker compose up -d (initializes config folder structure)</span>
+          </li>
+        </ul>
+
+        <div class="code-wrap">
+          <div class="code-block">
+            <code id="code-3" data-template="services:
+  swag:
+    image: lscr.io/linuxserver/swag:latest
+    container_name: swag
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - URL=yourdomain.com
+      - SUBDOMAINS=wildcard
+      - VALIDATION=dns
+      - DNSPLUGIN=cloudflare
+      - EMAIL=admin@yourdomain.com
+    volumes:
+      - ./config:/config
+    ports:
+      - 443:443
+      - 80:80
+    restart: unless-stopped">services:
+  swag:
+    image: lscr.io/linuxserver/swag:latest
+    container_name: swag
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - URL=yourdomain.com
+      - SUBDOMAINS=wildcard
+      - VALIDATION=dns
+      - DNSPLUGIN=cloudflare
+      - EMAIL=admin@yourdomain.com
+    volumes:
+      - ./config:/config
+    ports:
+      - 443:443
+      - 80:80
+    restart: unless-stopped</code>
+          </div>
+          <button class="copy-btn" data-code="code-3">copy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="card card-4" data-card="4">
+      <div class="card-header">
+        <span class="card-badge">04</span>
+        <div class="card-title-group">
+          <div class="card-title">Wildcard SSL Auth</div>
+          <div class="card-desc">Link SWAG to Cloudflare via API token for ACME DNS challenge</div>
+        </div>
+      </div>
+      <ul class="checklist" id="checklist-4">
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="4" data-idx="0" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Stop container: docker compose stop">Stop container: docker compose stop</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="4" data-idx="1" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Edit file: ~/docker/swag/config/dns-conf/cloudflare.ini">Edit file: ~/docker/swag/config/dns-conf/cloudflare.ini</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="4" data-idx="2" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Comment out all lines except dns_cloudflare_api_token">Comment out all lines except dns_cloudflare_api_token</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="4" data-idx="3" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Set: dns_cloudflare_api_token = YOUR_CLOUDFLARE_API_TOKEN">Set: dns_cloudflare_api_token = YOUR_CLOUDFLARE_API_TOKEN</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="4" data-idx="4" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Start container: docker compose up -d">Start container: docker compose up -d</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="4" data-idx="5" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Watch logs: docker logs -f swag">Watch logs: docker logs -f swag</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="4" data-idx="6" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Confirm &quot;Server Ready&quot; appears in logs">Confirm "Server Ready" appears in logs</span>
+        </li>
+      </ul>
+
+      <div class="code-wrap">
+        <div class="code-block">
+          <code id="code-4" data-template="# /config/dns-conf/cloudflare.ini
+# dns_cloudflare_email = admin@yourdomain.com  ← keep commented out
+dns_cloudflare_api_token = YOUR_CLOUDFLARE_API_TOKEN"># /config/dns-conf/cloudflare.ini
+# dns_cloudflare_email = admin@yourdomain.com  ← keep commented out
+dns_cloudflare_api_token = YOUR_CLOUDFLARE_API_TOKEN</code>
+        </div>
+        <button class="copy-btn" data-code="code-4">copy</button>
+      </div>
+    </div>
+
+    <!-- Card 5 -->
+    <div class="card card-5" data-card="5">
+      <div class="card-header">
+        <span class="card-badge">05</span>
+        <div class="card-title-group">
+          <div class="card-title">Service Routing</div>
+          <div class="card-desc">Enable wildcard subdomains for internal Docker apps</div>
+        </div>
+      </div>
+      <ul class="checklist" id="checklist-5">
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="5" data-idx="0" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Navigate to: ~/docker/swag/config/nginx/proxy-confs/">Navigate to: ~/docker/swag/config/nginx/proxy-confs/</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="5" data-idx="1" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Find a .subdomain.conf.sample file for your app (e.g. heimdall.subdomain.conf.sample)">Find a .subdomain.conf.sample file for your app (e.g. heimdall.subdomain.conf.sample)</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="5" data-idx="2" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Copy it: cp app.subdomain.conf.sample app.subdomain.conf">Copy it: cp app.subdomain.conf.sample app.subdomain.conf</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="5" data-idx="3" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Edit the file: set proxy_pass to your container's internal Docker name/IP + port">Edit the file: set proxy_pass to your container's internal Docker name/IP + port</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="5" data-idx="4" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Restart SWAG: docker compose restart swag">Restart SWAG: docker compose restart swag</span>
+        </li>
+        <li class="checklist-item">
+          <label class="check-wrap">
+            <input type="checkbox" data-card="5" data-idx="5" />
+            <div class="check-box"></div>
+          </label>
+          <span class="check-label" data-template="Test: open https://app.yourdomain.com in browser">Test: open https://app.yourdomain.com in browser</span>
+        </li>
+      </ul>
+    </div>
+
+  </div><!-- /bento-grid -->
+</div><!-- /wrapper -->
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Storage keys ──
+  const KEY_STATE  = 'swag-dns-setup';
+  const KEY_DOMAIN = 'swag-domain';
+  const KEY_VPS    = 'swag-vps-ip';
+
+  // ── DOM refs ──
+  const domainInput = document.getElementById('domainInput');
+  const vpsInput    = document.getElementById('vpsInput');
+  const liveDot     = document.getElementById('liveDot');
+  const clearDomain = document.getElementById('clearDomain');
+  const clearVps    = document.getElementById('clearVps');
+  const resetBtn    = document.getElementById('resetBtn');
+  const progressFill  = document.getElementById('progressFill');
+  const progressLabel = document.getElementById('progressLabel');
+
+  // ── Token substitution helpers ──
+  function getTokens() {
+    const d = domainInput.value.trim() || 'yourdomain.com';
+    const ip = vpsInput.value.trim() || 'YOUR_VPS_IP';
+    return { domain: d, ip: ip };
+  }
+
+  function applyTemplate(template, tokens) {
+    return template
+      .replace(/yourdomain\.com/g, tokens.domain)
+      .replace(/admin@yourdomain\.com/g, 'admin@' + tokens.domain)
+      .replace(/YOUR_VPS_IP/g, tokens.ip);
+  }
+
+  // ── Update all templated elements ──
+  function updateAllTemplates() {
+    const tokens = getTokens();
+
+    // Labels
+    document.querySelectorAll('[data-template]').forEach(function (el) {
+      if (el.tagName === 'CODE') return; // handled separately
+      el.textContent = applyTemplate(el.getAttribute('data-template'), tokens);
+    });
+
+    // Code blocks
+    document.querySelectorAll('code[data-template]').forEach(function (el) {
+      el.textContent = applyTemplate(el.getAttribute('data-template'), tokens);
+    });
+
+    // Live dot
+    const hasBoth = domainInput.value.trim() && vpsInput.value.trim();
+    liveDot.classList.toggle('active', !!hasBoth);
+  }
+
+  // ── Progress ──
+  function updateProgress() {
+    const all = document.querySelectorAll('input[type="checkbox"]');
+    const checked = document.querySelectorAll('input[type="checkbox"]:checked');
+    const total = all.length;
+    const done  = checked.length;
+    const pct   = total ? (done / total) * 100 : 0;
+
+    progressFill.style.width = pct + '%';
+    progressLabel.textContent = done + ' of ' + total + ' steps';
+  }
+
+  // ── Card completion ──
+  function updateCardStates() {
+    document.querySelectorAll('.card[data-card]').forEach(function (card) {
+      const cardId = card.getAttribute('data-card');
+      const boxes = card.querySelectorAll('input[type="checkbox"]');
+      if (!boxes.length) return;
+      const allDone = Array.from(boxes).every(function (cb) { return cb.checked; });
+      card.classList.toggle('done', allDone);
+    });
+  }
+
+  // ── Persist checkbox state ──
+  function saveState() {
+    const state = {};
+    document.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+      const key = cb.getAttribute('data-card') + '-' + cb.getAttribute('data-idx');
+      state[key] = cb.checked;
+    });
+    localStorage.setItem(KEY_STATE, JSON.stringify(state));
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(KEY_STATE);
+      if (!raw) return;
+      const state = JSON.parse(raw);
+      document.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+        const key = cb.getAttribute('data-card') + '-' + cb.getAttribute('data-idx');
+        if (state[key]) cb.checked = true;
+      });
+    } catch (e) { /* ignore */ }
+  }
+
+  // ── Checkbox event delegation ──
+  document.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+    cb.addEventListener('change', function () {
+      saveState();
+      updateProgress();
+      updateCardStates();
+    });
+  });
+
+  // ── Copy buttons ──
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const codeId = btn.getAttribute('data-code');
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      const text = codeEl.textContent;
+      navigator.clipboard.writeText(text).then(function () {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.textContent = 'copy';
+          btn.classList.remove('copied');
+        }, 1800);
+      }).catch(function () {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.textContent = 'copy';
+          btn.classList.remove('copied');
+        }, 1800);
+      });
+    });
+  });
+
+  // ── Domain / VPS inputs ──
+  domainInput.addEventListener('input', function () {
+    localStorage.setItem(KEY_DOMAIN, domainInput.value);
+    updateAllTemplates();
+  });
+
+  vpsInput.addEventListener('input', function () {
+    localStorage.setItem(KEY_VPS, vpsInput.value);
+    updateAllTemplates();
+  });
+
+  clearDomain.addEventListener('click', function () {
+    domainInput.value = '';
+    localStorage.setItem(KEY_DOMAIN, '');
+    updateAllTemplates();
+  });
+
+  clearVps.addEventListener('click', function () {
+    vpsInput.value = '';
+    localStorage.setItem(KEY_VPS, '');
+    updateAllTemplates();
+  });
+
+  // ── Reset progress ──
+  resetBtn.addEventListener('click', function () {
+    document.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+      cb.checked = false;
+    });
+    localStorage.removeItem(KEY_STATE);
+    updateProgress();
+    updateCardStates();
+  });
+
+  // ── Init ──
+  (function init() {
+    // Restore inputs first
+    const savedDomain = localStorage.getItem(KEY_DOMAIN);
+    const savedVps    = localStorage.getItem(KEY_VPS);
+    if (savedDomain !== null) domainInput.value = savedDomain;
+    if (savedVps    !== null) vpsInput.value    = savedVps;
+
+    // Apply substitution with restored values
+    updateAllTemplates();
+
+    // Restore checkbox state
+    loadState();
+
+    // Sync UI
+    updateProgress();
+    updateCardStates();
+  })();
+
+})();
+</script>
+</body>
+</html>
