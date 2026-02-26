@@ -14,7 +14,7 @@
       --bg:        #0f0f0f;
       --card-bg:   #141414;
       --card-border: #222222;
-      --muted:     #555555;
+      --muted:     #666666; /* raised from #555 for WCAG AA contrast — ACC-03 */
       --muted-2:   #3a3a3a;
       --text:      #e0e0e0;
       --text-dim:  #888888;
@@ -206,6 +206,7 @@
       border-left: 3px solid transparent;
       transition: border-left-color 0.3s ease, opacity 0.3s ease;
       position: relative;
+      min-width: 0; /* BUG-02: prevent grid blowout */
     }
 
     .card.done {
@@ -214,7 +215,7 @@
     }
     .card.done:hover { opacity: 0.9; }
 
-    /* Layout: Card 1 & 2 side by side (default 2-col), Card 3 full width, Card 4 & 5 side by side */
+    /* Layout: Card 1 & 2 side by side, Card 3 full width, Card 4 & 5 side by side */
     .card-1 { grid-column: 1; }
     .card-2 { grid-column: 2; }
     .card-3 { grid-column: 1 / -1; }
@@ -271,17 +272,31 @@
       cursor: pointer;
     }
 
-    /* Custom checkbox */
+    /* Custom checkbox — ACC-01: visually hidden, not display:none, so keyboard works */
     .check-wrap {
       flex-shrink: 0;
       margin-top: 1px;
+      position: relative;
+      width: 16px;
+      height: 16px;
     }
 
     .check-wrap input[type="checkbox"] {
-      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 16px;
+      height: 16px;
+      opacity: 0;
+      margin: 0;
+      cursor: pointer;
+      z-index: 1;
     }
 
     .check-box {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 16px;
       height: 16px;
       border: 1.5px solid var(--muted-2);
@@ -289,9 +304,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: border-color 0.2s ease, background 0.2s ease;
+      transition: border-color 0.2s ease, background 0.2s ease, outline-color 0.1s ease;
       cursor: pointer;
-      position: relative;
+      pointer-events: none; /* let the real input handle clicks */
       overflow: hidden;
     }
 
@@ -305,6 +320,13 @@
       transform: rotate(45deg) scale(0) translate(-1px, -1px);
       transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
       margin-top: -2px;
+    }
+
+    /* ACC-01: visible focus ring for keyboard users */
+    .check-wrap input[type="checkbox"]:focus-visible + .check-box {
+      outline: 2px solid var(--amber);
+      outline-offset: 2px;
+      border-color: var(--amber);
     }
 
     .check-wrap input[type="checkbox"]:checked + .check-box {
@@ -321,6 +343,8 @@
       line-height: 1.5;
       user-select: none;
       transition: color 0.2s ease;
+      word-break: break-word;       /* BUG-02: prevent mobile overflow */
+      overflow-wrap: break-word;
     }
 
     .checklist-item:has(input:checked) .check-label {
@@ -333,6 +357,7 @@
     .code-wrap {
       margin-top: 14px;
       position: relative;
+      min-width: 0; /* BUG-02: prevent grid blowout */
     }
 
     .code-block {
@@ -369,14 +394,15 @@
     .copy-btn:hover { background: #333; color: var(--text); }
     .copy-btn.copied { background: var(--amber-glow); color: var(--amber); border-color: var(--amber-dim); }
 
-    /* Card 3 two-column layout inside */
+    /* Card 3 two-column layout inside — VIS-02: aligned to 768px to match outer breakpoint */
     .card-3-inner {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
       align-items: start;
+      min-width: 0;
     }
-    @media (max-width: 700px) {
+    @media (max-width: 768px) {
       .card-3-inner { grid-template-columns: 1fr; }
     }
 
@@ -414,7 +440,8 @@
 
   <!-- Progress Bar -->
   <div class="progress-row">
-    <span class="progress-label" id="progressLabel">0 of 20 steps</span>
+    <!-- CON-01: empty; JS populates with correct dynamic count -->
+    <span class="progress-label" id="progressLabel"></span>
     <div class="progress-track">
       <div class="progress-fill" id="progressFill"></div>
     </div>
@@ -425,16 +452,20 @@
     <div class="live-dot" id="liveDot"></div>
 
     <div class="input-group">
-      <span class="input-label">Your Domain:</span>
-      <input class="domain-input" id="domainInput" type="text" placeholder="yourdomain.com" autocomplete="off" spellcheck="false" />
+      <!-- ACC-02: aria-label added -->
+      <label class="input-label" for="domainInput">Your Domain:</label>
+      <input class="domain-input" id="domainInput" type="text" placeholder="yourdomain.com"
+             aria-label="Your domain name" autocomplete="off" spellcheck="false" />
       <button class="clear-link" id="clearDomain">clear</button>
     </div>
 
     <div class="domain-row-divider"></div>
 
     <div class="input-group">
-      <span class="input-label">VPS IP:</span>
-      <input class="domain-input" id="vpsInput" type="text" placeholder="0.0.0.0" autocomplete="off" spellcheck="false" />
+      <!-- ACC-02: aria-label added -->
+      <label class="input-label" for="vpsInput">VPS IP:</label>
+      <input class="domain-input" id="vpsInput" type="text" placeholder="0.0.0.0"
+             aria-label="VPS IP address" autocomplete="off" spellcheck="false" />
       <button class="clear-link" id="clearVps">clear</button>
     </div>
   </div>
@@ -448,7 +479,8 @@
         <span class="card-badge">01</span>
         <div class="card-title-group">
           <div class="card-title">Domain Delegation</div>
-          <div class="card-desc">Transfer DNS authority from Namecheap to Cloudflare</div>
+          <!-- CON-02: generalized away from Namecheap-specific -->
+          <div class="card-desc">Transfer DNS authority from your domain registrar to Cloudflare</div>
         </div>
       </div>
       <ul class="checklist" id="checklist-1">
@@ -457,7 +489,8 @@
             <input type="checkbox" data-card="1" data-idx="0" />
             <div class="check-box"></div>
           </label>
-          <span class="check-label" data-template="Log into Namecheap, select your domain">Log into Namecheap, select your domain</span>
+          <!-- CON-02: generalized registrar text -->
+          <span class="check-label" data-template="Log into your domain registrar (e.g. Namecheap, Porkbun), select your domain">Log into your domain registrar (e.g. Namecheap, Porkbun), select your domain</span>
         </li>
         <li class="checklist-item">
           <label class="check-wrap">
@@ -575,7 +608,8 @@
               <input type="checkbox" data-card="3" data-idx="2" />
               <div class="check-box"></div>
             </label>
-            <span class="check-label" data-template="Create docker-compose.yml using the code block — edit domain and email to match yours">Create docker-compose.yml using the code block — edit domain and email to match yours</span>
+            <!-- CON-03: explicitly mention editing EMAIL before deploying -->
+            <span class="check-label" data-template="Create docker-compose.yml from the code block — update URL= and EMAIL= with your actual values before deploying">Create docker-compose.yml from the code block — update URL= and EMAIL= with your actual values before deploying</span>
           </li>
           <li class="checklist-item">
             <label class="check-wrap">
@@ -776,26 +810,27 @@ dns_cloudflare_api_token = YOUR_CLOUDFLARE_API_TOKEN</code>
   const KEY_VPS    = 'swag-vps-ip';
 
   // ── DOM refs ──
-  const domainInput = document.getElementById('domainInput');
-  const vpsInput    = document.getElementById('vpsInput');
-  const liveDot     = document.getElementById('liveDot');
-  const clearDomain = document.getElementById('clearDomain');
-  const clearVps    = document.getElementById('clearVps');
-  const resetBtn    = document.getElementById('resetBtn');
+  const domainInput   = document.getElementById('domainInput');
+  const vpsInput      = document.getElementById('vpsInput');
+  const liveDot       = document.getElementById('liveDot');
+  const clearDomain   = document.getElementById('clearDomain');
+  const clearVps      = document.getElementById('clearVps');
+  const resetBtn      = document.getElementById('resetBtn');
   const progressFill  = document.getElementById('progressFill');
   const progressLabel = document.getElementById('progressLabel');
 
   // ── Token substitution helpers ──
   function getTokens() {
-    const d = domainInput.value.trim() || 'yourdomain.com';
-    const ip = vpsInput.value.trim() || 'YOUR_VPS_IP';
+    const d  = domainInput.value.trim() || 'yourdomain.com';
+    const ip = vpsInput.value.trim()    || 'YOUR_VPS_IP';
     return { domain: d, ip: ip };
   }
 
   function applyTemplate(template, tokens) {
+    // Order matters: replace the email variant before the bare domain
     return template
-      .replace(/yourdomain\.com/g, tokens.domain)
       .replace(/admin@yourdomain\.com/g, 'admin@' + tokens.domain)
+      .replace(/yourdomain\.com/g, tokens.domain)
       .replace(/YOUR_VPS_IP/g, tokens.ip);
   }
 
@@ -803,9 +838,9 @@ dns_cloudflare_api_token = YOUR_CLOUDFLARE_API_TOKEN</code>
   function updateAllTemplates() {
     const tokens = getTokens();
 
-    // Labels
+    // Checklist labels and other data-template elements (not <code>)
     document.querySelectorAll('[data-template]').forEach(function (el) {
-      if (el.tagName === 'CODE') return; // handled separately
+      if (el.tagName === 'CODE') return;
       el.textContent = applyTemplate(el.getAttribute('data-template'), tokens);
     });
 
@@ -815,27 +850,24 @@ dns_cloudflare_api_token = YOUR_CLOUDFLARE_API_TOKEN</code>
     });
 
     // Live dot
-    const hasBoth = domainInput.value.trim() && vpsInput.value.trim();
-    liveDot.classList.toggle('active', !!hasBoth);
+    liveDot.classList.toggle('active', !!(domainInput.value.trim() && vpsInput.value.trim()));
   }
 
   // ── Progress ──
   function updateProgress() {
-    const all = document.querySelectorAll('input[type="checkbox"]');
+    const all     = document.querySelectorAll('input[type="checkbox"]');
     const checked = document.querySelectorAll('input[type="checkbox"]:checked');
-    const total = all.length;
-    const done  = checked.length;
-    const pct   = total ? (done / total) * 100 : 0;
-
-    progressFill.style.width = pct + '%';
+    const total   = all.length;
+    const done    = checked.length;
+    const pct     = total ? (done / total) * 100 : 0;
+    progressFill.style.width  = pct + '%';
     progressLabel.textContent = done + ' of ' + total + ' steps';
   }
 
   // ── Card completion ──
   function updateCardStates() {
     document.querySelectorAll('.card[data-card]').forEach(function (card) {
-      const cardId = card.getAttribute('data-card');
-      const boxes = card.querySelectorAll('input[type="checkbox"]');
+      const boxes  = card.querySelectorAll('input[type="checkbox"]');
       if (!boxes.length) return;
       const allDone = Array.from(boxes).every(function (cb) { return cb.checked; });
       card.classList.toggle('done', allDone);
@@ -846,8 +878,7 @@ dns_cloudflare_api_token = YOUR_CLOUDFLARE_API_TOKEN</code>
   function saveState() {
     const state = {};
     document.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
-      const key = cb.getAttribute('data-card') + '-' + cb.getAttribute('data-idx');
-      state[key] = cb.checked;
+      state[cb.getAttribute('data-card') + '-' + cb.getAttribute('data-idx')] = cb.checked;
     });
     localStorage.setItem(KEY_STATE, JSON.stringify(state));
   }
@@ -861,10 +892,10 @@ dns_cloudflare_api_token = YOUR_CLOUDFLARE_API_TOKEN</code>
         const key = cb.getAttribute('data-card') + '-' + cb.getAttribute('data-idx');
         if (state[key]) cb.checked = true;
       });
-    } catch (e) { /* ignore */ }
+    } catch (e) { /* ignore malformed state */ }
   }
 
-  // ── Checkbox event delegation ──
+  // ── Checkbox listeners ──
   document.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
     cb.addEventListener('change', function () {
       saveState();
@@ -873,37 +904,54 @@ dns_cloudflare_api_token = YOUR_CLOUDFLARE_API_TOKEN</code>
     });
   });
 
-  // ── Copy buttons ──
+  // ── Copy buttons — BUG-01: robust HTTP + HTTPS handling ──
+  function showCopySuccess(btn) {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function () {
+      btn.textContent = 'copy';
+      btn.classList.remove('copied');
+    }, 1800);
+  }
+
+  function legacyCopy(text, btn) {
+    // execCommand fallback for non-secure contexts (HTTP)
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0;';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (ok) {
+        showCopySuccess(btn);
+      } else {
+        // execCommand returned false — last resort: select the code block text
+        btn.textContent = 'Select all';
+        setTimeout(function () { btn.textContent = 'copy'; }, 2000);
+      }
+    } catch (e) {
+      btn.textContent = 'Select all';
+      setTimeout(function () { btn.textContent = 'copy'; }, 2000);
+    }
+  }
+
   document.querySelectorAll('.copy-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      const codeId = btn.getAttribute('data-code');
-      const codeEl = document.getElementById(codeId);
+      const codeEl = document.getElementById(btn.getAttribute('data-code'));
       if (!codeEl) return;
       const text = codeEl.textContent;
-      navigator.clipboard.writeText(text).then(function () {
-        btn.textContent = 'Copied!';
-        btn.classList.add('copied');
-        setTimeout(function () {
-          btn.textContent = 'copy';
-          btn.classList.remove('copied');
-        }, 1800);
-      }).catch(function () {
-        // Fallback
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        btn.textContent = 'Copied!';
-        btn.classList.add('copied');
-        setTimeout(function () {
-          btn.textContent = 'copy';
-          btn.classList.remove('copied');
-        }, 1800);
-      });
+
+      // Use modern Clipboard API only in secure contexts (HTTPS / localhost)
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text)
+          .then(function () { showCopySuccess(btn); })
+          .catch(function () { legacyCopy(text, btn); });
+      } else {
+        legacyCopy(text, btn);
+      }
     });
   });
 
@@ -922,39 +970,46 @@ dns_cloudflare_api_token = YOUR_CLOUDFLARE_API_TOKEN</code>
     domainInput.value = '';
     localStorage.setItem(KEY_DOMAIN, '');
     updateAllTemplates();
+    domainInput.focus();
   });
 
   clearVps.addEventListener('click', function () {
     vpsInput.value = '';
     localStorage.setItem(KEY_VPS, '');
     updateAllTemplates();
+    vpsInput.focus();
   });
 
-  // ── Reset progress ──
+  // ── Reset — UX-01 + UX-02: confirmation dialog, clears inputs too ──
   resetBtn.addEventListener('click', function () {
+    if (!window.confirm('Reset all progress?\n\nThis will clear all checked steps and your saved domain/IP fields.')) return;
+
+    // Clear checkboxes
     document.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
       cb.checked = false;
     });
     localStorage.removeItem(KEY_STATE);
+
+    // Clear domain + VPS inputs
+    domainInput.value = '';
+    vpsInput.value    = '';
+    localStorage.setItem(KEY_DOMAIN, '');
+    localStorage.setItem(KEY_VPS, '');
+
+    updateAllTemplates();
     updateProgress();
     updateCardStates();
   });
 
   // ── Init ──
   (function init() {
-    // Restore inputs first
     const savedDomain = localStorage.getItem(KEY_DOMAIN);
     const savedVps    = localStorage.getItem(KEY_VPS);
     if (savedDomain !== null) domainInput.value = savedDomain;
     if (savedVps    !== null) vpsInput.value    = savedVps;
 
-    // Apply substitution with restored values
     updateAllTemplates();
-
-    // Restore checkbox state
     loadState();
-
-    // Sync UI
     updateProgress();
     updateCardStates();
   })();
