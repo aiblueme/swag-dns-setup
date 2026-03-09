@@ -26,7 +26,7 @@
       --bg:           #0f0f0f;
       --card-bg:      #141414;
       --card-border:  #222222;
-      --muted:        #666666;
+      --muted:        #808080;
       --muted-2:      #3a3a3a;
       --text:         #e0e0e0;
       --text-dim:     #888888;
@@ -1001,6 +1001,16 @@ dns_cloudflare_api_token = YOUR_CLOUDFLARE_API_TOKEN"></code>
     updateAllTemplates();
     updateProgress();
     updateCardStates();
+  });
+
+  // ── Whole-row click — clicking check-label text toggles the checkbox ──
+  document.querySelectorAll('.checklist-item').forEach(function (item) {
+    item.addEventListener('click', function (e) {
+      if (!e.target.closest('.check-wrap')) {
+        var cb = item.querySelector('input[type="checkbox"]');
+        if (cb) cb.click();
+      }
+    });
   });
 
   // ── Init — runs synchronously before first paint ──
