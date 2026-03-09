@@ -9,7 +9,7 @@ security: done
 ux_ui: done
 repo_cleanup: done
 readme: done
-last_session: "2026-03-09"
+last_session: "2026-03-10"
 has_blockers: false
 ---
 
@@ -32,10 +32,12 @@ Agent: Claude Code
 - None
 
 ## Backlog
-- [P3] Add Open Graph meta tags (og:title, og:description, og:url)
-- [P3] Add inline SVG favicon
+(none)
 
 ## Done
+- [x] Add Open Graph meta tags (og:title, og:description, og:type, og:url) — 2026-03-10 — commit d9936b1
+- [x] Add inline SVG favicon (dark square #0f0f0f) — 2026-03-10 — commit d9936b1
+- [x] Add MIT LICENSE — 2026-03-10 — commit d8a41c4
 - [x] Dockerfile hardened — 2026-03-09
 - [x] nginx.conf created — 2026-03-09
 - [x] .dockerignore created — 2026-03-09
